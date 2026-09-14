@@ -75,7 +75,3 @@ The project report is located in:
 ```text
 report/report.md
 ```
-
-```
-
-```

@@ -19,8 +19,11 @@ data-science-mini-project/
 │   ├── raw/
 │   └── processed/
 ├── src/
-│   └── preprocess_yelp.py
+│   ├── preprocess_yelp.py
+│   ├── validate_yelp.py
+│   └── check_yelp_relationships.py
 ├── report/
+│   └── report.md
 ├── README.md
 ├── requirements.txt
 └── .gitignore

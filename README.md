@@ -6,8 +6,8 @@ A recommendation system for leisure activities in Helsinki, primarily aimed at t
 
 The project uses:
 
-- **Yelp Open Dataset** to learn user preferences and activity-category relationships.
-- **Helsinki open data** to provide local activities and venues.
+- **Yelp Open Dataset** to learn user preferences and relationships between activity categories.
+- **Helsinki Service Map open data** to provide local activities and venues.
 
 Yelp users and Helsinki users are not directly matched. Instead, preferences are transferred through activity categories.
 
@@ -15,13 +15,17 @@ Yelp users and Helsinki users are not directly matched. Instead, preferences are
 
 ```text
 data-science-mini-project/
+
 ├── data/
 │   ├── raw/
+│   │   └── helsinki/
 │   └── processed/
 ├── src/
 │   ├── preprocess_yelp.py
 │   ├── validate_yelp.py
-│   └── check_yelp_relationships.py
+│   ├── check_yelp_relationships.py
+│   ├── download_helsinki_data.py
+│   └── preprocess_helsinki.py
 ├── report/
 │   └── report.md
 ├── README.md
@@ -44,17 +48,15 @@ Install dependencies:
 python -m pip install -r requirements.txt
 ```
 
-### Download the Yelp dataset
+## Download and preprocess Yelp data
 
-Download the [Yelp Open Dataset](https://business.yelp.com/data/resources/open-dataset/).
-
-Extract the `.tar` file from the downloaded ZIP and place it in:
+Download the [Yelp Open Dataset](https://business.yelp.com/data/resources/open-dataset/), extract the `.tar` file, and place it at:
 
 ```text
 data/raw/yelp_dataset.tar
 ```
 
-Run the preprocessing:
+Then run:
 
 ```bash
 python src/preprocess_yelp.py
@@ -62,11 +64,39 @@ python src/preprocess_yelp.py
 
 The processed data will be saved in `data/processed/`.
 
+## Download and preprocess Helsinki data
+
+Helsinki data is obtained from the **Helsinki Service Map REST API**.
+
+Download the required data:
+
+```bash
+python src/download_helsinki_data.py
+```
+
+This saves the raw data to:
+
+```text
+data/raw/helsinki/
+```
+
+Then preprocess it:
+
+```bash
+python src/preprocess_helsinki.py
+```
+
+The processed activity catalogue is saved as:
+
+```text
+data/processed/helsinki_activities_candidate.csv
+```
+
 ## Data
 
-The Yelp dataset is **not included in this repository**. Raw and processed Yelp data are excluded from Git.
+The Yelp and Helsinki datasets are **not included in this repository**. Raw and processed data are excluded from Git.
 
-Helsinki activity data will be added and processed later.
+Both datasets can be recreated using the download and preprocessing scripts above.
 
 ## Report
 

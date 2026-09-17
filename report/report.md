@@ -2,61 +2,132 @@
 
 ## 1. Introduction
 
-Helsinki offers a wide range of leisure activities, but visitors may not know which activities are available or which ones match their interests. This project develops a recommendation system for leisure activities in Helsinki.
+Helsinki offers a wide range of leisure activities, but visitors may not know which options are available or which ones match their interests. This project develops a recommendation system for leisure activities in Helsinki, primarily targeting tourists and other visitors.
 
-The application is primarily targeted at tourists and other visitors. By using information about user preferences, the system aims to help visitors discover suitable activities beyond the most well-known attractions.
-
-The project combines external user-rating data with Helsinki-specific open data. Yelp data is used to learn relationships between user preferences and activity categories, while Helsinki open data provides the actual local activities that can be recommended.
+The project combines external user-rating data with Helsinki open data. Yelp data is used to learn general relationships between user preferences and activity categories, while Helsinki open data provides the actual local activities that can be recommended.
 
 ## 2. Background and Motivation
 
-Visitors to a new city have limited knowledge about the available activities and may have difficulty finding options that match their personal interests. A recommendation system can reduce this search effort by ranking activities according to user preferences.
+Visitors to a new city may have limited knowledge of available activities and may find it difficult to identify options matching their interests. A recommendation system can reduce this search effort by using information about user preferences to rank relevant activities.
 
-The motivation of this project is to investigate whether user-rating data from an external source can be used to learn general preference patterns and apply these patterns to leisure activities available in Helsinki.
+The project investigates whether user-rating data from an external source can be used to learn general preference patterns and apply them to leisure activities available in Helsinki.
 
 ## 3. Research Question
 
-How can user preference information from external rating data be used to recommend leisure activities to visitors in Helsinki?
+> How can user preference information from external rating data be used to recommend leisure activities to visitors in Helsinki?
 
 ## 4. Data
 
 ### 4.1 Yelp Open Dataset
 
-The Yelp Open Dataset is used as an external source of user-rating data. It contains businesses, business categories, and user reviews and ratings.
+The [Yelp Open Dataset](https://business.yelp.com/data/resources/open-dataset/) provides businesses, categories, and user reviews and ratings. This project uses:
 
-For this project, the business data provides the `business_id` and `categories` fields, while the review data provides the `user_id`, `business_id`, and `stars` fields. The `business_id` is used to connect businesses with their user ratings.
+- Business data: `business_id`, `categories`
+- Review data: `user_id`, `business_id`, `stars`
 
-The Yelp data is used to learn general relationships between user preferences and activity categories. Yelp users are not assumed to be the same users as those of the Helsinki application.
+The `business_id` connects businesses with their ratings. Yelp is used to learn general relationships between user preferences and activity categories. Yelp users are not assumed to be the same users as those of the Helsinki application.
 
 ### 4.2 Helsinki Activity Data
 
-Helsinki open data is used to provide information about actual leisure activities and venues available in Helsinki. This dataset forms the local activity catalogue from which recommendations can be generated.
+The Helsinki data comes from the [Helsinki Region Infoshare Service Map REST API dataset](https://hri.fi/data/en/dataset/paakaupunkiseudun-palvelukartan-rest-rajapinta) and is downloaded through the [Helsinki Service Map REST API](https://www.hel.fi/palvelukarttaws/rest/v4/).
 
-### 4.3 Data Sources and Data Usage
+Four resources were downloaded:
 
-The two datasets serve different purposes. Yelp provides historical user-rating information, while the Helsinki dataset provides the activities that can be recommended.
+- `unit` – service locations and their information
+- `ontologyword` – individual service and activity categories
+- `ontologytree` – category hierarchy
+- `arealcity` – municipality information
 
-The datasets are therefore not directly combined through user IDs or business IDs. Instead, they will be connected through activity categories and other common features.
+The raw data contains 21,435 units, 1,113 ontology words, 1,593 ontology trees, and 14 area entries. Helsinki was identified as municipality ID 91. Restricting the unit data to Helsinki resulted in 12,252 units.
+
+The `unit` data contains 60 fields, including names, categories, coordinates, addresses, descriptions, and contact information. All unit IDs are unique. The category fields contain no missing values, while some optional fields such as English names and descriptions have substantial missingness.
+
+### 4.3 Combining the Data
+
+The two datasets serve different purposes and cannot be directly joined through user or business IDs. Yelp provides historical rating information, while the Helsinki dataset provides the local recommendation catalogue.
+
+Instead, the datasets are connected through comparable activity concepts. Yelp can therefore be used to learn general preference patterns, which can later be applied to representations of Helsinki activities.
 
 ## 5. Data Preprocessing
 
-### 5.1 Yelp Data Preprocessing
+### 5.1 Yelp
 
-The Yelp dataset was downloaded as a TAR archive containing several JSON files. Only the business and review data were required for the initial recommendation system.
+The Yelp business data was reduced to `business_id` and `categories`, and businesses without category information were removed. This left **150,243 businesses**.
 
-The business data was reduced to `business_id` and `categories`. Businesses without category information were removed, leaving **150,243 businesses**. The review data was reduced to `user_id`, `business_id`, and `stars`. Reviews associated with businesses that were removed during business preprocessing were also excluded, resulting in **6,989,591 reviews**. In total, **689 reviews** were removed for this reason.
+The review data was reduced to `user_id`, `business_id`, and `stars`. Reviews associated with removed businesses were excluded, leaving **6,989,591 reviews**. A total of **689 reviews** were removed.
 
-A validation check confirmed that the required fields contained no missing or empty values. A relationship check also confirmed that all **150,243 business IDs** in the review data exist in the processed business data. The review data contains **1,987,685 unique users**, of whom **851,854 have multiple reviews**, confirming that individual users can have multiple ratings.
+Validation confirmed that the required fields contained no missing or empty values and that all **150,243 business IDs** in the review data existed in the processed business data. The data contains **1,987,685 unique users**, of whom **851,854 have multiple reviews**.
 
-The preprocessing was implemented in Python. The review data was processed in chunks to avoid excessive memory usage, while ensuring that all retained reviews are associated with businesses that have available category information.
+The Yelp data was processed in Python, with reviews read in chunks to reduce memory usage.
 
-### 5.2 Helsinki Data Preprocessing
+The business categories were also inspected to identify potentially relevant leisure categories. The dataset contains **1,311 unique categories** and **668,592 category assignments**. Relevant examples included Bowling, Cinema, Climbing, Fitness, Museums, Swimming Pools, Tennis, and other recreational categories. This inspection was exploratory; not all identified categories will necessarily be used in the final model.
 
-### 5.3 Category Processing and Mapping
+### 5.2 Helsinki
 
-### 5.4 Combining the Data
+The Helsinki preprocessing first restricted the Service Map units to Helsinki, leaving **12,252 units**. The ontology data was then explored to identify categories relevant to leisure activities.
+
+Potential categories were initially identified using keyword-based searches of category names. The corresponding Service Map records were then inspected to determine whether they actually represented suitable leisure activities. Relevant categories were selected, while unsuitable or overly broad categories were excluded. These decisions were implemented in the preprocessing script so that the process is reproducible.
+
+The selected categories were mapped to broader project activity categories, such as:
+
+| Service Map category         | Project category |
+| ---------------------------- | ---------------- |
+| Museums                      | Museum           |
+| Cinemas                      | Cinema           |
+| Bowling alleys               | Bowling          |
+| Indoor climbing walls        | Climbing         |
+| Tennis court areas           | Tennis           |
+| Public indoor swimming pools | Swimming         |
+| Indoor fitness centres       | Fitness          |
+| Golf courses                 | Golf             |
+| Minigolf course              | Mini Golf        |
+| Galleries                    | Art Gallery      |
+| Zoos                         | Zoo              |
+| Theatres                     | Theatre          |
+
+The initial category selection produced **791 records**. After removing clearly irrelevant records and exact duplicates, **700 candidate activity records** remained across 16 categories.
+
+| Activity category | Records |
+| ----------------- | ------: |
+| Art Gallery       |     101 |
+| Bowling           |       8 |
+| Cinema            |      20 |
+| Climbing          |      11 |
+| Dance             |      35 |
+| Disc Golf         |      17 |
+| Fitness           |      54 |
+| Golf              |       6 |
+| Ice Skating       |     126 |
+| Martial Arts      |      49 |
+| Mini Golf         |       7 |
+| Museum            |      56 |
+| Swimming          |      16 |
+| Tennis            |     129 |
+| Theatre           |      64 |
+| Zoo               |       1 |
+| **Total**         | **700** |
+
+The cleaning was necessary because category information alone does not always identify suitable recommendation items. For example, the climbing category contained schools and other facilities, while the gallery category also contained libraries and cultural centres. Some categories were excluded entirely when they were too broad; for example, the gymnastics category contained 301 records but many represented ordinary school or community sports halls.
+
+The exploration also showed that one physical venue can have multiple Service Map records. For example, individual tennis courts may appear as separate records even though they belong to the same venue. Therefore, the current 700-record dataset is considered a **candidate catalogue**, not the final set of recommendation items.
+
+### 5.3 Activity Representation
+
+The Yelp and Helsinki datasets use different category systems. For example, Helsinki uses categories such as _indoor fitness centres_ and _indoor climbing walls_, while Yelp contains categories such as _Gyms_, _Fitness & Instruction_, _Climbing_, and _Rock Climbing_.
+
+Therefore, exact category-name matching is not sufficient. Instead, broader activity concepts such as **Fitness, Climbing, Tennis, Swimming, Museum, Cinema, Golf, and Mini Golf** can provide a common representation between the datasets.
+
+The goal is not to force every category into an exact one-to-one match, but to create comparable activity representations that can be used when transferring preference information from Yelp to Helsinki activities.
 
 ## 6. Exploratory Data Analysis
+
+The exploratory analysis focused on understanding the structure and suitability of both datasets before selecting the recommendation method.
+
+For Yelp, the analysis examined business categories and the relationship between users, businesses, and reviews. The large number of users with multiple reviews makes it possible to investigate user-level rating patterns. At the same time, the large number of unrelated business categories means that using all Yelp categories would introduce substantial irrelevant information.
+
+For Helsinki, the analysis focused on the Service Map ontology and the actual records belonging to potential leisure categories. The results showed substantial differences between categories. Some, such as bowling and golf, contained relatively small and clear sets of records, while categories such as tennis and ice skating contained many records because individual facilities or courts may be represented separately. Other categories required additional inspection because they contained a mixture of relevant and irrelevant locations.
+
+These findings show that preprocessing and activity representation are important parts of the recommendation system. The number of raw Service Map records should not be interpreted as the number of unique leisure venues.
 
 ## 7. Recommendation System
 

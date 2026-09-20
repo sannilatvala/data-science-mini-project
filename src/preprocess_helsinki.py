@@ -319,13 +319,29 @@ def remove_duplicates(
 ):
     """Remove duplicate records for the same activity."""
 
-    return activities.drop_duplicates(
+    activities = activities.drop_duplicates(
         subset=[
             "id",
             "activity_category"
         ]
     )
 
+    activities = activities.drop_duplicates(
+        subset=[
+            "name",
+            "address",
+            "activity_category"
+        ]
+    )
+
+    return activities
+
+def clean_activities(activities):
+    """Cleans activity descriptions by removing field numbers."""
+
+    activities["name"] = (activities["name"].str.split("/", n=1).str[0].str.strip())
+
+    return activities
 
 def main():
     """Create the cleaned candidate catalogue."""
@@ -378,6 +394,10 @@ def main():
         remove_obvious_non_activities(
             activities
         )
+    )
+
+    activities = (
+        clean_activities(activities)
     )
 
     activities = remove_duplicates(
